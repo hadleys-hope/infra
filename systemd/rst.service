@@ -1,0 +1,6 @@
+[Unit]
+Description=Hadley's Hope: pull repos and restart changed services
+
+[Service]
+Type=oneshot
+ExecStart=%h/infra/rst --auto
