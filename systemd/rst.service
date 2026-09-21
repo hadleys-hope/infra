@@ -3,4 +3,4 @@ Description=Hadley's Hope: pull repos and restart changed services
 
 [Service]
 Type=oneshot
-ExecStart=%h/infra/rst --auto
+ExecStart=/usr/bin/bash %h/infra/rst --auto
