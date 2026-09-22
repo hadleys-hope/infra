@@ -6,33 +6,33 @@ services:
     restart: unless-stopped
     init: true
     volumes:
-      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro,Z
     ports:
-      - "127.0.0.1:1883:1883"   # only for mosquitto_sub from the server itself
+      - '127.0.0.1:1883:1883' # only for mosquitto_sub from the server itself
 
   world:
     build: ../world
     restart: unless-stopped
     init: true
     depends_on: [mosquitto]
-    command: ["python3", "hadleys_hope.py", "--speed", "20"]
+    command: ['python3', 'hadleys_hope.py', '--speed', '20']
     environment:
       MQTT_URL: mosquitto:1883
       DATA_DIR: /data
-      PORT: "8000"
+      PORT: '8000'
       ADMIN_TOKEN: ${ADMIN_TOKEN:?put ADMIN_TOKEN into infra/.env}
     volumes:
       - world-data:/data
     ports:
-      - "8000:8000"
-    stop_grace_period: 20s     # time for the autosave on SIGTERM
+      - '8000:8000'
+    stop_grace_period: 20s # time for the autosave on SIGTERM
 
   houses:
-    build: ../world            # same repo, same cached layers
+    build: ../world # same repo, same cached layers
     restart: unless-stopped
     init: true
     depends_on: [world]
-    command: ["python3", "houses_runtime.py"]
+    command: ['python3', 'houses_runtime.py']
     environment:
       MQTT_URL: mosquitto:1883
 
@@ -43,15 +43,15 @@ services:
     environment:
       DOMAIN: ${DOMAIN:?put DOMAIN into infra/.env}
     ports:
-      - "80:80"                # http, needed for the certificate check
-      - "443:443"              # https
-      - "443:443/udp"          # http/3
+      - '80:80' # http, needed for the certificate check
+      - '443:443' # https
+      - '443:443/udp' # http/3
     volumes:
       - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
-      - caddy-data:/data       # certificates, keep them
+      - caddy-data:/data # certificates, keep them
       - caddy-config:/config
 
 volumes:
   caddy-data:
   caddy-config:
-  world-data:                  # saved world + history.db, survives rst
+  world-data: # saved world + history.db, survives rst
