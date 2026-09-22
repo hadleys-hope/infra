@@ -7,10 +7,13 @@ set -euo pipefail
 
 ROOT="${HH_ROOT:-$HOME}"
 REPOS=(infra world)            # add runtime vm compiler houses monitoring when they appear
-COMPOSE=(docker compose -f "$ROOT/infra/compose.yaml")
+COMPOSE=(docker compose --project-directory "$ROOT/infra" -f "$ROOT/infra/compose.yaml")
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/rst.lock"
 MODE="${1:-}"
 CHANGED=0
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/hadleys-hope"
+DEPLOYED="$STATE_DIR/deployed-heads"
+DESIRED_HEADS=""
 export GIT_TERMINAL_PROMPT=0   # never hang on a password prompt
 
 say() {
@@ -38,6 +41,7 @@ pull_repos() {
         before=$(git -C "$dir" rev-parse --short HEAD)
         git -C "$dir" pull --ff-only --quiet
         after=$(git -C "$dir" rev-parse --short HEAD)
+        DESIRED_HEADS+="$repo $(git -C "$dir" rev-parse HEAD)"$'\n'
         if [[ "$before" == "$after" ]]; then
             say "   same  $repo $after"
         else
@@ -62,10 +66,18 @@ show_status() {
 main() {
     take_lock
     pull_repos
+    if [[ ! -f "$DEPLOYED" ]] || [[ "$(cat "$DEPLOYED")" != "${DESIRED_HEADS%$'\n'}" ]]; then
+        CHANGED=1
+    fi
     if [[ "$MODE" == "--auto" && "$CHANGED" -eq 0 ]]; then
         exit 0
     fi
     bring_up
+    # Record only a successful build/up. A failed build is retried by the timer,
+    # even when the next git pull has no new commits.
+    mkdir -p "$STATE_DIR"
+    printf '%s' "$DESIRED_HEADS" > "$DEPLOYED.tmp"
+    mv "$DEPLOYED.tmp" "$DEPLOYED"
     show_status
 }
 
