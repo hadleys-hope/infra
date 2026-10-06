@@ -27,14 +27,24 @@ services:
       - '8000:8000'
     stop_grace_period: 20s # time for the autosave on SIGTERM
 
-  houses:
-    build: ../world # same repo, same cached layers
+  runtime:
+    # every house of LV-426 (0..299) and of Klyaksa's six cities (300..5309) runs its program in hope-runtime:
+    # one VM per house, sharded over threads; LV-426 per-house topics, Klyaksa batched (one message per city per tick)
+    build:
+      context: ..
+      dockerfile: infra/runtime.Dockerfile
     restart: unless-stopped
     init: true
-    depends_on: [world]
-    command: ['python3', 'houses_runtime.py']
-    environment:
-      MQTT_URL: mosquitto:1883
+    depends_on: [mosquitto]
+    command:
+      - --programs
+      - /hbc/comfort.hbc,/hbc/eco.hbc,/hbc/night_setback.hbc,/hbc/storm_ready.hbc,/hbc/dumb.hbc
+      - --houses
+      - '5310'
+      - --threads
+      - '3'
+      - --mqtt
+      - mosquitto:1883
 
   caddy:
     image: caddy:2

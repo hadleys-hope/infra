@@ -6,7 +6,7 @@
 set -euo pipefail
 
 ROOT="${HH_ROOT:-$HOME}"
-REPOS=(infra world)            # add runtime vm compiler houses monitoring when they appear
+REPOS=(infra world vm compiler houses)   # runtime.Dockerfile builds from vm, compiler and houses
 COMPOSE=(docker compose --project-directory "$ROOT/infra" -f "$ROOT/infra/compose.yaml")
 LOCK="${XDG_RUNTIME_DIR:-/tmp}/rst.lock"
 MODE="${1:-}"
