@@ -9,9 +9,12 @@ RUN chmod +x gradlew && ./gradlew --no-daemon -q installDist
 FROM eclipse-temurin:21-jdk AS programs
 COPY --from=compiler /src/compiler/build/install /opt/hopec
 COPY houses/programs/ /programs/
-RUN mkdir /hbc && for f in /programs/*.hope; do \
-      /opt/hopec/*/bin/* --compile "$f" "/hbc/$(basename "$f" .hope).hbc"; \
-    done && ls /hbc
+# the install has two launchers (a shell script and a Windows .bat); take the script, and stop on the first error
+RUN set -e; mkdir /hbc; \
+    hopec=$(find /opt/hopec -path '*/bin/*' -type f ! -name '*.bat' | head -n 1); \
+    echo "compiler: $hopec"; \
+    for f in /programs/*.hope; do "$hopec" --compile "$f" "/hbc/$(basename "$f" .hope).hbc"; done; \
+    ls -l /hbc
 
 FROM debian:bookworm-slim AS vm
 RUN apt-get update && apt-get install -y --no-install-recommends g++ cmake make && rm -rf /var/lib/apt/lists/*
