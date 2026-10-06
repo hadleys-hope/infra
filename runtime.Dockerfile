@@ -14,6 +14,7 @@ RUN set -e; mkdir /hbc; \
     hopec=$(find /opt/hopec -path '*/bin/*' -type f ! -name '*.bat' | head -n 1); \
     echo "compiler: $hopec"; \
     for f in /programs/*.hope; do "$hopec" --compile "$f" "/hbc/$(basename "$f" .hope).hbc"; done; \
+    cp /programs/*.hope /hbc/; \
     ls -l /hbc
 
 FROM debian:bookworm-slim AS vm
