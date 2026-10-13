@@ -4,6 +4,7 @@ services:
   mosquitto:
     image: eclipse-mosquitto:2
     restart: unless-stopped
+    mem_limit: 512m # limits are a guess, tune by hand according to server characteristics
     init: true
     volumes:
       - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro,Z
@@ -13,6 +14,7 @@ services:
   world:
     build: ../world
     restart: unless-stopped
+    mem_limit: 3g
     init: true
     depends_on: [mosquitto]
     command: ['python3', 'hadleys_hope.py', '--speed', '20']
@@ -34,6 +36,7 @@ services:
       context: ..
       dockerfile: infra/runtime.Dockerfile
     restart: unless-stopped
+    mem_limit: 1g
     init: true
     depends_on: [mosquitto]
     command:
@@ -49,6 +52,7 @@ services:
   caddy:
     image: caddy:2
     restart: unless-stopped
+    mem_limit: 256m
     depends_on: [world]
     environment:
       DOMAIN: ${DOMAIN:?put DOMAIN into infra/.env}

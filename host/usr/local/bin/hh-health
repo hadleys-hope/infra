@@ -1,0 +1,6 @@
+#!/bin/sh
+# one journal line per minute: load, memory, swap, disk. Read with: journalctl -t hh-health
+read -r l1 l5 l15 _ < /proc/loadavg
+mem=$(free -m | awk '/^Mem:/{printf "mem_used=%sM mem_avail=%sM ", $3, $7} /^Swap:/{printf "swap_used=%sM/%sM ", $3, $2}')
+disk=$(df -P / /var/lib/docker 2>/dev/null | awk 'NR>1{print "disk" $6 "=" $5}' | sort -u | tr '\n' ' ')
+logger -t hh-health "load=$l1/$l5/$l15 $mem$disk"

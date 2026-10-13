@@ -1,0 +1,31 @@
+#!/bin/sh
+# Run as root by hh-host-sync@<user>.timer: copy changed files from host/etc and host/usr
+# into the system and restart only what they affect.
+# Files deleted from host/ stay on the system: remove them by hand.
+set -eu
+cd "$(dirname "$0")"
+root="${HH_DEST:-}" # tests install into a temp dir
+docker='' journald='' reexec='' reload=''
+for f in $(find etc usr -type f | sort); do
+    cmp -s "$f" "$root/$f" && continue
+    case "$f" in
+        etc/docker/daemon.json)
+            # a broken daemon.json would keep docker, and every container, down
+            if ! dockerd --validate --config-file "$f" > /dev/null; then
+                echo "skip /$f: dockerd rejects it"
+                continue
+            fi
+            docker=1 ;;
+        etc/systemd/journald.conf.d/*) journald=1 ;;
+        etc/systemd/system.conf.d/*) reexec=1 ;;
+        etc/systemd/system/*) reload=1 ;;
+    esac
+    mode=644
+    [ ! -x "$f" ] || mode=755
+    install -D -m "$mode" "$f" "$root/$f"
+    echo "installed /$f"
+done
+if [ -n "$reexec" ]; then systemctl daemon-reexec; elif [ -n "$reload" ]; then systemctl daemon-reload; fi
+[ -z "$journald" ] || systemctl restart systemd-journald
+# log rotation reaches running containers only after they are recreated (rst -f)
+[ -z "$docker" ] || systemctl restart docker
