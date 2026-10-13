@@ -1,0 +1,7 @@
+[Unit]
+Description=Install changed infra/host files of user %i
+
+[Service]
+Type=oneshot
+# ponytail: assumes the home is /home/<user>; change the path if the server user lives elsewhere
+ExecStart=/bin/sh /home/%i/infra/host/hh-host-sync

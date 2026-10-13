@@ -16,6 +16,9 @@ jobs:
       - name: Shell syntax and deployment retry behavior
         run: |
           bash -n rst
+          sh -n host/usr/local/bin/hh-health
+          sh -n host/hh-host-sync
+          python3 -m json.tool host/etc/docker/daemon.json > /dev/null
           python3 -m unittest discover -s tests -v
       - name: Compose configuration
         env:
